@@ -1,40 +1,45 @@
 version: "3.8"
+
 services:
-  mysql:
+  java_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: expensesapp
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/expenses_tracker?allowPublicKeyRetrieval=true&useSSL=false"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "Test@123"
+      SPRING_DATASOURCE_DRIVER-CLASS-NAME: com.mysql.cj.jdbc.Driver
+    networks:
+      - expenses-nw
+    restart: always
+    depends_on:
+      - database
+
+  database:
     image: mysql:latest
     container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: Test@123
-      MYSQL_DATABASE: expenses_tracker
-    volumes:
-      - ./mysql-data:/var/lib/mysql
     networks:
-      - appbridge
+      - expenses-nw
+    environment:
+      MYSQL_ROOT_PASSWORD: "Test@123"
+      MYSQL_DATABASE: expenses_tracker
+    restart: always
+    ports:
+      - "3306:3306"
     healthcheck:
-      test: ["CMD","mysqladmin","ping","-h","localhost","-uroot","-pTest@123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pTest@123"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    restart: always
-
-  mainapp:
-    image: snehcreate/expensetracker_v3
-    container_name: Expensetracker
-    environment:
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/expenses_tracker?allowPublicKeyRetrieval=true&useSSL=false"
-      SPRING_DATASOURCE_PASSWORD: Test@123
-    ports:
-      - "8080:8080"
-    networks:
-      - appbridge
-    depends_on:
-      - mysql
-    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql
 
 networks:
-  appbridge:
+  expenses-nw:
 
 volumes:
-  mysql-data:
+  mysql_data:
